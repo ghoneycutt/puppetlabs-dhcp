@@ -1,6 +1,8 @@
+# == Class: dhcp
+#
 class dhcp (
-  $dnsdomain,
-  $nameservers,
+  $dnsdomain           = [ $::domain ],
+  $nameservers         = [ '8.8.8.8', '8.8.4.4' ],
   $ntpservers          = undef,
   $dhcp_conf_header    = 'INTERNAL_TEMPLATE',
   $dhcp_conf_ddns      = 'INTERNAL_TEMPLATE',
@@ -15,7 +17,7 @@ class dhcp (
   $pxefilename         = undef,
   $logfacility         = 'daemon',
   $default_lease_time  = 3600,
-  $max_lease_time      = 86400
+  $max_lease_time      = 86400,
 ) {
   #input validation
   validate_array($dnsdomain)
@@ -23,6 +25,8 @@ class dhcp (
   validate_array($ntpservers)
 
   include dhcp::params
+  include dhcp::monitor
+  include concat::setup
 
   $dhcp_dir    = $dhcp::params::dhcp_dir
   $packagename = $dhcp::params::packagename
@@ -66,30 +70,30 @@ class dhcp (
     default           => $dhcp_conf_extra,
   }
 
+  if $::operatingsystem == 'Darwin' {
+    $package_provider = 'macports'
+  } else {
+    $package_provider = undef
+  }
+
   package { $packagename:
     ensure   => installed,
-    provider => $operatingsystem ? {
-      default => undef,
-      darwin  => macports
-    }
+    provider => $package_provider,
   }
 
   # Only debian and ubuntu have this style of defaults for startup.
-  case $operatingsystem {
-    'debian','ubuntu': {
-      file{ '/etc/default/isc-dhcp-server':
-        ensure  => present,
-        owner   => 'root',
-        group   => 'root',
-        mode    => '0644',
-        before  => Package[$packagename],
-        notify  => Service[$servicename],
-        content => template('dhcp/debian/default_isc-dhcp-server'),
-      }
+  if $::osfamily == 'Debian' {
+    file{ '/etc/default/isc-dhcp-server':
+      ensure  => present,
+      owner   => 'root',
+      group   => 'root',
+      mode    => '0644',
+      before  => Package[$packagename],
+      notify  => Service[$servicename],
+      content => template('dhcp/debian/default_isc-dhcp-server'),
     }
   }
 
-  include concat::setup
   Concat { require => Package[$packagename] }
 
   # dhcpd.conf
@@ -156,7 +160,4 @@ class dhcp (
     subscribe => [Concat["${dhcp_dir}/dhcpd.pools"], Concat["${dhcp_dir}/dhcpd.hosts"], File["${dhcp_dir}/dhcpd.conf"]],
     require   => Package[$packagename],
   }
-
-  include dhcp::monitor
-
 }

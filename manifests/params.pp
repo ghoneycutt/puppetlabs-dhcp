@@ -1,3 +1,5 @@
+# == Class: dhcp::params
+#
 class dhcp::params {
 
   case $::operatingsystem {
@@ -30,6 +32,8 @@ class dhcp::params {
       $packagename = 'dhcp'
       $servicename = 'dhcpd'
     }
+    default: {
+      fail('dhcp is supported on the following OS\'s: Debian, Ubuntu, Darwin, FreeBSD, RedHat, Fedora, and CentOS.')
+    }
   }
-
 }
