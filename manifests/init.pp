@@ -26,7 +26,6 @@ class dhcp (
 
   include dhcp::params
   include dhcp::monitor
-  include concat::setup
 
   $dhcp_dir    = $dhcp::params::dhcp_dir
   $packagename = $dhcp::params::packagename
