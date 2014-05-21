@@ -1,7 +1,10 @@
 # == Class: dhcp
 #
 class dhcp (
-  $dnsdomain           = [ $::domain ],
+  $dhcp_dir            = $dhcp::params::dhcp_dir,
+  $packagename         = $dhcp::params::packagename,
+  $servicename         = $dhcp::params::servicename,
+  $dnsdomain           = $dhcp::params::dnsdomain,
   $nameservers         = [ '8.8.8.8', '8.8.4.4' ],
   $ntpservers          = undef,
   $dhcp_conf_header    = 'INTERNAL_TEMPLATE',
@@ -18,18 +21,13 @@ class dhcp (
   $logfacility         = 'daemon',
   $default_lease_time  = 3600,
   $max_lease_time      = 86400,
-) {
+) inherits dhcp::params {
   #input validation
   validate_array($dnsdomain)
   validate_array($nameservers)
   validate_array($ntpservers)
 
-  include dhcp::params
   include dhcp::monitor
-
-  $dhcp_dir    = $dhcp::params::dhcp_dir
-  $packagename = $dhcp::params::packagename
-  $servicename = $dhcp::params::servicename
 
   # Incase people set interface instead of interfaces work around
   # that. If they set both, use interfaces and the user is a unwise

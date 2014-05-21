@@ -2,6 +2,8 @@
 #
 class dhcp::params {
 
+  $dnsdomain = [ $::domain ]
+
   case $::operatingsystem {
     'debian': {
       $dhcp_dir    = '/etc/dhcp'
